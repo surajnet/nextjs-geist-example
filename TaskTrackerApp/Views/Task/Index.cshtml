@@ -1,0 +1,173 @@
+@model IEnumerable<TaskTrackerApp.Models.TaskModel>
+
+@{
+    ViewData["Title"] = ViewData["FilterTitle"]?.ToString() ?? "Task Manager";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-4">@ViewData["Title"]</h1>
+    <a asp-action="Create" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle"></i> Add New Task
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Filter Navigation -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Filter Tasks</h5>
+        <div class="btn-group" role="group" aria-label="Task filters">
+            <a asp-action="Index" asp-route-filter="all" 
+               class="btn @(ViewData["Filter"]?.ToString() == "all" ? "btn-primary" : "btn-outline-primary")">
+                All Tasks
+            </a>
+            <a asp-action="Index" asp-route-filter="pending" 
+               class="btn @(ViewData["Filter"]?.ToString() == "pending" ? "btn-warning" : "btn-outline-warning")">
+                Pending
+            </a>
+            <a asp-action="Index" asp-route-filter="completed" 
+               class="btn @(ViewData["Filter"]?.ToString() == "completed" ? "btn-success" : "btn-outline-success")">
+                Completed
+            </a>
+            <a asp-action="Index" asp-route-filter="overdue" 
+               class="btn @(ViewData["Filter"]?.ToString() == "overdue" ? "btn-danger" : "btn-outline-danger")">
+                Overdue
+            </a>
+        </div>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <!-- Task Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">@Model.Count()</h5>
+                    <p class="card-text">Total Tasks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">@Model.Count(t => !t.IsCompleted)</h5>
+                    <p class="card-text">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-success">@Model.Count(t => t.IsCompleted)</h5>
+                    <p class="card-text">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-light">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">@Model.Count(t => !t.IsCompleted && t.DueDate.Date < DateTime.Today)</h5>
+                    <p class="card-text">Overdue</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks List -->
+    <div class="row">
+        @foreach (var task in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100 @(task.IsCompleted ? "border-success" : (task.DueDate.Date < DateTime.Today && !task.IsCompleted ? "border-danger" : "border-primary"))">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="card-title mb-0 text-truncate" title="@task.Title">@task.Title</h6>
+                        <span class="@task.StatusCssClass">@task.DueDateStatus</span>
+                    </div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrEmpty(task.Description))
+                        {
+                            <p class="card-text text-muted small">@task.Description</p>
+                        }
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <strong>Due:</strong> @task.DueDate.ToString("MMM dd, yyyy")
+                            </small>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <strong>Created:</strong> @task.CreatedAt.ToString("MMM dd, yyyy")
+                            </small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="btn-group w-100" role="group">
+                            <a asp-action="Details" asp-route-id="@task.Id" class="btn btn-outline-info btn-sm">
+                                View
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@task.Id" class="btn btn-outline-primary btn-sm">
+                                Edit
+                            </a>
+                            <form asp-action="ToggleComplete" asp-route-id="@task.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-@(task.IsCompleted ? "warning" : "success") btn-sm">
+                                    @(task.IsCompleted ? "Reopen" : "Complete")
+                                </button>
+                            </form>
+                            <a asp-action="Delete" asp-route-id="@task.Id" class="btn btn-outline-danger btn-sm">
+                                Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-clipboard-x display-1 text-muted"></i>
+        </div>
+        <h3 class="text-muted">No tasks found</h3>
+        <p class="text-muted">
+            @if (ViewData["Filter"]?.ToString() == "all")
+            {
+                <text>Get started by creating your first task!</text>
+            }
+            else
+            {
+                <text>No tasks match the current filter. Try a different filter or create a new task.</text>
+            }
+        </p>
+        <a asp-action="Create" class="btn btn-primary btn-lg mt-3">
+            Create Your First Task
+        </a>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert').alert('close');
+        }, 5000);
+    </script>
+}
