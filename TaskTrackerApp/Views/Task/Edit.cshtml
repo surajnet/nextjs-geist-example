@@ -1,0 +1,107 @@
+@model TaskTrackerApp.Models.TaskModel
+
+@{
+    ViewData["Title"] = "Edit Task";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title mb-0">Edit Task</h2>
+            </div>
+            <div class="card-body">
+                <form asp-action="Edit" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    
+                    <input asp-for="Id" type="hidden" />
+                    <input asp-for="CreatedAt" type="hidden" />
+                    
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label">Task Title *</label>
+                        <input asp-for="Title" class="form-control" placeholder="Enter task title" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="Enter task description (optional)"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="DueDate" class="form-label">Due Date *</label>
+                        <input asp-for="DueDate" class="form-control" type="date" />
+                        <span asp-validation-for="DueDate" class="text-danger"></span>
+                        <div class="form-text">Select when this task should be completed.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input asp-for="IsCompleted" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsCompleted" class="form-check-label">
+                                Mark as completed
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Task Information -->
+                    <div class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Task Information</h6>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <small class="text-muted">
+                                            <strong>Created:</strong> @Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")
+                                        </small>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <small class="text-muted">
+                                            <strong>Status:</strong> 
+                                            <span class="@Model.StatusCssClass">@Model.DueDateStatus</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a asp-action="Index" class="btn btn-secondary me-md-2">
+                            Cancel
+                        </a>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info me-md-2">
+                            View Details
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Update Task
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Set minimum date to today for new tasks, but allow past dates for existing tasks
+        document.addEventListener('DOMContentLoaded', function() {
+            const dueDateInput = document.querySelector('input[type="date"]');
+            if (dueDateInput) {
+                // Allow editing past dates for existing tasks
+                // Only set minimum date if the current due date is in the future
+                const currentDate = new Date(dueDateInput.value);
+                const today = new Date();
+                
+                if (currentDate >= today) {
+                    const todayString = today.toISOString().split('T')[0];
+                    dueDateInput.setAttribute('min', todayString);
+                }
+            }
+        });
+    </script>
+}
