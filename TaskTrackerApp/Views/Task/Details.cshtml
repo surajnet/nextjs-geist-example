@@ -1,0 +1,133 @@
+@model TaskTrackerApp.Models.TaskModel
+
+@{
+    ViewData["Title"] = "Task Details";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2 class="card-title mb-0">Task Details</h2>
+                <span class="@Model.StatusCssClass fs-6">@Model.DueDateStatus</span>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <h4 class="text-primary">@Model.Title</h4>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p class="text-muted mt-3">@Model.Description</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted mt-3 fst-italic">No description provided.</p>
+                    }
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-sm-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted">Due Date</h6>
+                                <p class="card-text">
+                                    <strong class="@(Model.DueDate.Date < DateTime.Today && !Model.IsCompleted ? "text-danger" : "text-dark")">
+                                        @Model.DueDate.ToString("MMMM dd, yyyy")
+                                    </strong>
+                                </p>
+                                <small class="text-muted">
+                                    @if (Model.DueDate.Date == DateTime.Today)
+                                    {
+                                        <span class="text-warning">Due Today</span>
+                                    }
+                                    else if (Model.DueDate.Date < DateTime.Today && !Model.IsCompleted)
+                                    {
+                                        <span class="text-danger">@((DateTime.Today - Model.DueDate.Date).Days) day(s) overdue</span>
+                                    }
+                                    else if (Model.DueDate.Date > DateTime.Today)
+                                    {
+                                        <span class="text-info">@((Model.DueDate.Date - DateTime.Today).Days) day(s) remaining</span>
+                                    }
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-muted">Status</h6>
+                                <p class="card-text">
+                                    <span class="@Model.StatusCssClass fs-5">
+                                        @(Model.IsCompleted ? "Completed" : "Pending")
+                                    </span>
+                                </p>
+                                @if (Model.IsCompleted)
+                                {
+                                    <small class="text-success">Task completed successfully!</small>
+                                }
+                                else
+                                {
+                                    <small class="text-muted">Task is still pending</small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">Additional Information</h6>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <strong>Task ID:</strong><br>
+                                    <code>@Model.Id</code>
+                                </small>
+                            </div>
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <strong>Created:</strong><br>
+                                    @Model.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a asp-action="Index" class="btn btn-secondary">
+                        Back to Tasks
+                    </a>
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                        Edit Task
+                    </a>
+                    
+                    <form asp-action="ToggleComplete" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-@(Model.IsCompleted ? "warning" : "success")">
+                            @(Model.IsCompleted ? "Mark as Pending" : "Mark as Complete")
+                        </button>
+                    </form>
+                    
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">
+                        Delete Task
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Confirmation for status toggle
+        document.querySelector('form[action*="ToggleComplete"] button').addEventListener('click', function(e) {
+            const isCompleted = @Model.IsCompleted.ToString().ToLower();
+            const action = isCompleted ? 'mark as pending' : 'mark as complete';
+            
+            if (!confirm(`Are you sure you want to ${action} this task?`)) {
+                e.preventDefault();
+            }
+        });
+    </script>
+}
